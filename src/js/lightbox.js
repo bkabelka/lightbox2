@@ -12,6 +12,14 @@
  * @preserve
  */
 
+/**
+ * Lightbox BKab Edition v2.11.5.1
+ * by Bernhard Kabelka - http://bernies-journeys.at/
+ * Latest Modification: 2024-10-27
+ *
+ * All changes marked by BKAB comments below.
+ */
+
 // Uses Node, AMD or browser globals to create a module.
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -81,11 +89,12 @@
     });
   };
 
-  // Loop through anchors and areamaps looking for either data-lightbox attributes or rel attributes
-  // that contain 'lightbox'. When these are clicked, start lightbox.
+  // BKAB : Loop through images enclosed in anchors of class "lightbox-link".
+  //        When these are clicked, start lightbox.
   Lightbox.prototype.enable = function() {
     var self = this;
-    $('body').on('click', 'a[rel^=lightbox], area[rel^=lightbox], a[data-lightbox], area[data-lightbox]', function(event) {
+    // BKAB : Search for all images enclosed in anchors of class "lightbox-link"
+    $('body').on('click', 'a[href][class^="lightbox-link"] img', function(event) {
       self.start($(event.currentTarget));
       return false;
     });
@@ -224,17 +233,29 @@
     function addToAlbum($link) {
       self.album.push({
         alt: $link.attr('data-alt'),
-        link: $link.attr('href'),
+        // BKAB : Determine the image link based on the thumbnail source
+        link: $link.attr('src').replace(/\/thumb\//, '/img/').replace(/^thumb\//, 'img/').replace(/-[0-9]+x[0-9]+\.jpg$/, '.jpg'),
         title: $link.attr('data-title') || $link.attr('title')
       });
     }
 
-    // Support both data-lightbox attribute and rel attribute implementations
-    var dataLightboxValue = $link.attr('data-lightbox');
-    var $links;
+    //
+    //  BKAB : addLiteralLinkToAlbum()
+    //  Alternative way of adding images to the album (multi-line change).
+    //
+    function addLiteralLinkToAlbum($link, $title) {
+      self.album.push({
+        link: $link,
+        title: $title
+      });
+    }
+    // BKAB : End of multi-line change
 
-    if (dataLightboxValue) {
-      $links = $($link.prop('tagName') + '[data-lightbox="' + dataLightboxValue + '"]');
+    // BKAB : Support all images enclosed in anchors of class "lightbox-link" or within the lightboxImageArray
+    //        (multi-line change).
+    if (typeof lightboxImageArray === 'undefined' || lightboxImageArray == null || lightboxImageArray.length == 0) {
+      var $links = $('a[href][class^="lightbox-link"] img');
+      // BKAB : End of multi-line change
       for (var i = 0; i < $links.length; i = ++i) {
         addToAlbum($($links[i]));
         if ($links[i] === $link[0]) {
@@ -242,17 +263,13 @@
         }
       }
     } else {
-      if ($link.attr('rel') === 'lightbox') {
-        // If image is not part of a set
-        addToAlbum($link);
-      } else {
-        // If image is part of a set
-        $links = $($link.prop('tagName') + '[rel="' + $link.attr('rel') + '"]');
-        for (var j = 0; j < $links.length; j = ++j) {
-          addToAlbum($($links[j]));
-          if ($links[j] === $link[0]) {
-            imageNumber = j;
-          }
+      // BKAB : Support for the lightboxImageArray (multi-line change)
+      for (var j = 0; j < lightboxImageArray.length; j = ++j) {
+        var id = lightboxImageArray[j] + '.jpg';
+        addLiteralLinkToAlbum('img/' + id, lightboxImageTitle[j]);
+        if ('thumb/' + id === $link.attr('src')) {
+          imageNumber = j;
+          // BKAB : End of multi-line change
         }
       }
     }
